@@ -1,0 +1,17 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.log
+streamlit.err
+streamlit.log
+*.pth
+models/
+data/
+.results/
+*.sqlite3
+*.egg-info/
+.ipynb_checkpoints/
+.vscode/
