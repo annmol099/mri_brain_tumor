@@ -4,14 +4,28 @@ Brain Tumor Detection Web Application
 Upload an MRI brain scan and get instant tumor detection results!
 """
 
-import streamlit as st
-import torch
-import torch.nn.functional as F
-from PIL import Image
-import numpy as np
-from torchvision import transforms
 import os
 import sys
+
+# CRITICAL: Patch pathlib before any imports that might use it
+import sys
+import pathlib
+
+# Create a shim for pathlib._local
+if not hasattr(pathlib, '_local'):
+    pathlib._local = pathlib.Path
+
+# Also add to sys.modules to intercept any dynamic imports
+sys.modules['pathlib._local'] = pathlib
+
+# Import PyTorch first before TensorFlow to avoid pathlib conflicts
+import torch
+import torch.nn.functional as F
+from torchvision import transforms
+
+import streamlit as st
+from PIL import Image
+import numpy as np
 
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -108,19 +122,26 @@ def load_model():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = ResNet50Classifier(num_classes=4)
         
-        # Load weights
+        # Load the model checkpoint
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
-        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
-        else:
-            model.load_state_dict(checkpoint)
         
+        # Extract model state dict
+        if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+            state_dict = checkpoint['model_state_dict']
+        else:
+            state_dict = checkpoint
+        
+        # Load weights into model
+        model.load_state_dict(state_dict)
         model.to(device)
         model.eval()
         
         return model, device
+        
     except Exception as e:
         st.error(f"❌ Error loading model: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())
         return None
 
 def preprocess_image(image):
