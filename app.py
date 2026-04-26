@@ -6,6 +6,7 @@ Upload an MRI brain scan and get instant tumor detection results!
 
 import os
 import sys
+from contextlib import contextmanager
 
 # CRITICAL: Patch pathlib before any imports that might use it
 import sys
@@ -123,25 +124,35 @@ def load_model():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Use checkpoint weights only; avoid downloading ImageNet weights on deploy.
         model = ResNet50Classifier(num_classes=4, pretrained=False)
-        
-        # Try safest load first; fallback handles old checkpoints with WindowsPath metadata.
+
+        @contextmanager
+        def _portable_pathlib_patch():
+            """Allow loading checkpoints saved on different OS path implementations."""
+            original_windows_path = pathlib.WindowsPath
+            original_posix_path = pathlib.PosixPath
+            try:
+                pathlib.WindowsPath = pathlib.PureWindowsPath
+                pathlib.PosixPath = pathlib.PurePosixPath
+                yield
+            finally:
+                pathlib.WindowsPath = original_windows_path
+                pathlib.PosixPath = original_posix_path
+
+        # First try normal checkpoint load.
         try:
-            checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=True)
+            checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
         except TypeError:
             checkpoint = torch.load(MODEL_PATH, map_location=device)
         except Exception as load_err:
-            if 'WindowsPath' not in str(load_err):
+            msg = str(load_err)
+            if ('WindowsPath' not in msg) and ('PosixPath' not in msg):
                 raise
-
-            original_windows_path = pathlib.WindowsPath
-            try:
-                pathlib.WindowsPath = pathlib.PosixPath
+            # Fallback for checkpoints containing OS-specific pathlib objects.
+            with _portable_pathlib_patch():
                 try:
                     checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
                 except TypeError:
                     checkpoint = torch.load(MODEL_PATH, map_location=device)
-            finally:
-                pathlib.WindowsPath = original_windows_path
         
         # Extract model state dict
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
