@@ -124,8 +124,24 @@ def load_model():
         # Use checkpoint weights only; avoid downloading ImageNet weights on deploy.
         model = ResNet50Classifier(num_classes=4, pretrained=False)
         
-        # Load the model checkpoint
-        checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
+        # Try safest load first; fallback handles old checkpoints with WindowsPath metadata.
+        try:
+            checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=True)
+        except TypeError:
+            checkpoint = torch.load(MODEL_PATH, map_location=device)
+        except Exception as load_err:
+            if 'WindowsPath' not in str(load_err):
+                raise
+
+            original_windows_path = pathlib.WindowsPath
+            try:
+                pathlib.WindowsPath = pathlib.PosixPath
+                try:
+                    checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
+                except TypeError:
+                    checkpoint = torch.load(MODEL_PATH, map_location=device)
+            finally:
+                pathlib.WindowsPath = original_windows_path
         
         # Extract model state dict
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
