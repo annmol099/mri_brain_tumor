@@ -121,7 +121,8 @@ def load_model():
     
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = ResNet50Classifier(num_classes=4)
+        # In deployment we load trained checkpoint weights, so disable ImageNet download.
+        model = ResNet50Classifier(num_classes=4, pretrained=False)
         
         # Load the model checkpoint
         checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
