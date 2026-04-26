@@ -236,13 +236,11 @@ def main():
         """)
         
         st.markdown("## ⚙️ Model Info")
-        model_loaded = load_model()
-        if model_loaded:
-            model, device = model_loaded
-            st.success(f"✅ Model loaded successfully!")
-            st.info(f"🖥️ Device: {device.type.upper()}")
-            if device.type == 'cuda':
-                st.info(f"🎮 GPU: {torch.cuda.get_device_name(0)}")
+        st.info("Model loads on first prediction to keep startup fast on Render.")
+        if os.path.exists(MODEL_PATH):
+            st.success("✅ Model file found")
+        else:
+            st.error("❌ Model file missing in models folder")
         
         st.markdown("## ⚠️ Disclaimer")
         st.warning("""
@@ -299,6 +297,7 @@ def main():
                     return
                 
                 model, device = model_loaded
+                st.caption(f"Inference device: {device.type.upper()}")
                 
                 # Show loading spinner
                 with st.spinner('🔄 Analyzing brain scan...'):
