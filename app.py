@@ -138,21 +138,32 @@ def load_model():
                 pathlib.WindowsPath = original_windows_path
                 pathlib.PosixPath = original_posix_path
 
-        # First try normal checkpoint load.
-        try:
-            checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
-        except TypeError:
-            checkpoint = torch.load(MODEL_PATH, map_location=device)
-        except Exception as load_err:
-            msg = str(load_err)
-            if ('WindowsPath' not in msg) and ('PosixPath' not in msg):
-                raise
-            # Fallback for checkpoints containing OS-specific pathlib objects.
+        def _portable_torch_load(weights_only_flag):
+            """Try to load checkpoint with mmap for lower memory, then fallback for older torch versions."""
             with _portable_pathlib_patch():
                 try:
-                    checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
+                    return torch.load(
+                        MODEL_PATH,
+                        map_location=device,
+                        weights_only=weights_only_flag,
+                        mmap=True
+                    )
                 except TypeError:
-                    checkpoint = torch.load(MODEL_PATH, map_location=device)
+                    # For torch versions where mmap or weights_only is not supported.
+                    try:
+                        return torch.load(
+                            MODEL_PATH,
+                            map_location=device,
+                            weights_only=weights_only_flag
+                        )
+                    except TypeError:
+                        return torch.load(MODEL_PATH, map_location=device)
+
+        # Prefer weights-only load first to avoid pulling unnecessary checkpoint metadata.
+        try:
+            checkpoint = _portable_torch_load(weights_only_flag=True)
+        except Exception:
+            checkpoint = _portable_torch_load(weights_only_flag=False)
         
         # Extract model state dict
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
