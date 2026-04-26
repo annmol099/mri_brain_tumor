@@ -3,10 +3,9 @@
 # tensorflow>=2.13.0
 # keras>=2.13.0
 
-# Use CPU-only PyTorch wheels on Render to avoid huge CUDA installs
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.3.1+cpu
-torchvision==0.18.1+cpu
+# PyTorch (required for albumentations)
+torch>=2.0.0
+torchvision>=0.15.0
 
 # Data Processing
 numpy>=1.24.0
