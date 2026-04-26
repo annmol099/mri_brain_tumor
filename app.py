@@ -30,6 +30,9 @@ import numpy as np
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
+BASE_DIR = os.path.dirname(__file__)
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'final_model_20251106_142153.pth')
+
 from model_architecture import ResNet50Classifier
 
 # Page configuration
@@ -111,10 +114,8 @@ TUMOR_INFO = {
 @st.cache_resource
 def load_model():
     """Load the trained PyTorch model"""
-    model_path = 'models/final_model_20251106_142153.pth'
-    
-    if not os.path.exists(model_path):
-        st.error(f"❌ Model file not found: {model_path}")
+    if not os.path.exists(MODEL_PATH):
+        st.error(f"❌ Model file not found: {MODEL_PATH}")
         st.info("Please ensure the trained model is in the 'models' folder.")
         return None
     
@@ -123,7 +124,7 @@ def load_model():
         model = ResNet50Classifier(num_classes=4)
         
         # Load the model checkpoint
-        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
         
         # Extract model state dict
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:

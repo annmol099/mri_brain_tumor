@@ -9,6 +9,8 @@ streamlit.err
 streamlit.log
 *.pth
 models/
+!models/
+!models/final_model_20251106_142153.pth
 data/
 .results/
 *.sqlite3

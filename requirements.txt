@@ -1,6 +1,7 @@
 # Core Deep Learning
-tensorflow>=2.13.0
-keras>=2.13.0
+# TensorFlow is optional for this project; keep it commented unless needed.
+# tensorflow>=2.13.0
+# keras>=2.13.0
 
 # PyTorch (required for albumentations)
 torch>=2.0.0
@@ -38,7 +39,8 @@ pyyaml>=6.0
 # Experiment Tracking (optional)
 # wandb>=0.15.0
 
-# Deployment (optional)
+# Deployment
 streamlit>=1.25.0
 # flask>=2.3.0
 # fastapi>=0.100.0
+ 
