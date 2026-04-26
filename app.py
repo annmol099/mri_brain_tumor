@@ -121,7 +121,8 @@ def load_model():
     
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = ResNet50Classifier(num_classes=4)
+        # Use checkpoint weights only; avoid downloading ImageNet weights on deploy.
+        model = ResNet50Classifier(num_classes=4, pretrained=False)
         
         # Load the model checkpoint
         checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=False)
@@ -236,13 +237,11 @@ def main():
         """)
         
         st.markdown("## ⚙️ Model Info")
-        model_loaded = load_model()
-        if model_loaded:
-            model, device = model_loaded
-            st.success(f"✅ Model loaded successfully!")
-            st.info(f"🖥️ Device: {device.type.upper()}")
-            if device.type == 'cuda':
-                st.info(f"🎮 GPU: {torch.cuda.get_device_name(0)}")
+        st.info("Model loads only when you upload an image to keep the app responsive on Render.")
+        if os.path.exists(MODEL_PATH):
+            st.success("✅ Model file found")
+        else:
+            st.error("❌ Model file missing in models folder")
         
         st.markdown("## ⚠️ Disclaimer")
         st.warning("""
