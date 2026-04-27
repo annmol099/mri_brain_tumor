@@ -7,6 +7,7 @@ __pycache__/
 *.log
 streamlit.err
 streamlit.log
+predictions_database.db
 *.pth
 models/
 !models/
